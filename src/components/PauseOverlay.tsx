@@ -4,6 +4,8 @@
 
 type Props = {
   modeLabel: string;
+  /** 「DIFFICULTY」相当ボタンの文言。ノーマル時は 'DIFFICULTY'、カスタム時は 'CUSTOM' */
+  difficultyLabel?: string;
   remain: number;
   score: number;
   onResume: () => void;
@@ -14,6 +16,7 @@ type Props = {
 
 export default function PauseOverlay({
   modeLabel,
+  difficultyLabel = 'DIFFICULTY',
   remain,
   score,
   onResume,
@@ -47,7 +50,7 @@ export default function PauseOverlay({
             RETRY
           </button>
           <button className="btn btn-ghost" onClick={onDifficulty}>
-            DIFFICULTY
+            {difficultyLabel}
           </button>
           <button className="btn btn-ghost" onClick={onHome}>
             HOME
