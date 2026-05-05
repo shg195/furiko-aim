@@ -5,6 +5,12 @@
 
 import TopChrome from '../components/TopChrome';
 import { PERFECT_SCORE, PROFILES } from '../constants';
+import { downloadBlob, makeResultPng } from '../lib/canvasShot';
+import {
+  isWebShareSupported,
+  shareViaTwitter,
+  shareViaWebShare,
+} from '../lib/share';
 import type { DifficultyKey, GameResult, HighScores } from '../types';
 
 type Props = {
@@ -35,6 +41,34 @@ export default function ResultScreen({
     : profile
       ? `${profile.bobs}-${profile.label}`
       : '';
+
+  const handleSave = async () => {
+    const blob = await makeResultPng(result, labelStr);
+    if (!blob) return;
+    const filename = `furiko-aim-${labelStr.toLowerCase()}-${result.score}.png`;
+    downloadBlob(blob, filename);
+  };
+
+  const buildShareText = () =>
+    `振り子エイム — ${labelStr}: ${result.score.toLocaleString()} (${pctOfPerfect.toFixed(1)}% of perfect) #振り子エイム`;
+
+  const buildShareUrl = () =>
+    typeof window !== 'undefined'
+      ? window.location.origin + window.location.pathname
+      : undefined;
+
+  const handleShare = async () => {
+    let file: File | undefined;
+    const blob = await makeResultPng(result, labelStr);
+    if (blob) {
+      file = new File([blob], 'furiko-aim-result.png', { type: 'image/png' });
+    }
+    await shareViaWebShare({ text: buildShareText(), url: buildShareUrl(), file });
+  };
+
+  const handleX = () => {
+    shareViaTwitter({ text: buildShareText(), url: buildShareUrl() });
+  };
 
   return (
     <div className="screen pad">
@@ -93,6 +127,19 @@ export default function ResultScreen({
             </button>
             <button className="btn btn-ghost" onClick={onTitle}>
               TITLE
+            </button>
+          </div>
+          <div className="result-actions">
+            <button className="btn btn-ghost small" onClick={handleSave}>
+              SAVE
+            </button>
+            {isWebShareSupported() && (
+              <button className="btn btn-ghost small" onClick={handleShare}>
+                SHARE
+              </button>
+            )}
+            <button className="btn btn-ghost small" onClick={handleX}>
+              X
             </button>
           </div>
         </div>

@@ -869,6 +869,11 @@ body {
   gap: 12px;
   margin-top: 24px;
 }
+.result-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
 .result-side {
   display: flex;
   flex-direction: column;
