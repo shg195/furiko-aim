@@ -5,6 +5,7 @@
 import { useMemo, useState } from 'react';
 import BackdropGrid from './components/BackdropGrid';
 import { PROFILES } from './constants';
+import { generateChaoticAngles } from './lib/chaos';
 import CustomScreen from './screens/CustomScreen';
 import DifficultyScreen from './screens/DifficultyScreen';
 import GameScreen from './screens/GameScreen';
@@ -54,10 +55,7 @@ export default function App() {
     }
     if (mode === 'normal') {
       const p = PROFILES[profileKey];
-      const jitter = (p.jitterDeg * Math.PI) / 180;
-      const angles = p.lengths.map(
-        () => Math.PI + (Math.random() - 0.5) * 2 * jitter,
-      );
+      const angles = generateChaoticAngles(p);
       return {
         lengths: p.lengths,
         angles,
