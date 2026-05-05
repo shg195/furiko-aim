@@ -1,17 +1,24 @@
 // PendulumCanvas.tsx — 振り子・ロッド・軌跡・フィールド円・先端ハイライトの描画コア
+// + カーソル追跡・距離スコア・ロックオンリングフィードバック（M3）
 //
-// 物理積分は src/lib/physics.ts。本コンポーネントは描画のみを担い、
-// カーソル追跡・スコア計算・フィードバックリング等は M3 で別途追加する。
+// 物理積分は src/lib/physics.ts、スコアリングは src/lib/scoring.ts に分離。
 
 import { useEffect, useRef } from 'react';
 import {
   ACCENT_COLOR,
   FIELD_RADIUS_RATIO,
   RK4_SUBSTEPS,
+  SIGMA_FACTOR_TIP,
   TRAIL_LIFETIME_MS,
 } from '../constants';
 import { bobPositions, stepPendulum } from '../lib/physics';
-import type { PendulumState, TrailSample, Vec2 } from '../types';
+import { computeScore } from '../lib/scoring';
+import type {
+  FeedbackStyle,
+  PendulumState,
+  TrailSample,
+  Vec2,
+} from '../types';
 
 type Props = {
   /** 各ロッドの相対長（おもり数 = 配列長） */
@@ -25,12 +32,20 @@ type Props = {
   paused?: boolean;
   /**
    * タイトル背景等の軽量モード。glow を弱め、軌跡の不透明度を下げる。
-   * このコンポーネントではカーソル関連の処理はしないので主に発色を抑える用途
+   * 既定で showCursor=false と組み合わせて使う
    */
   ambient?: boolean;
   className?: string;
   /** glow とリングの色。既定はアクセント色 #d21e1e */
   accent?: string;
+  /** カーソル追跡を有効化（false ならリスナー登録もしない） */
+  showCursor?: boolean;
+  /** フィードバック様式。既定は 'ring'（spec 2.13 で本番固定） */
+  feedbackStyle?: FeedbackStyle;
+  /** 先端追跡スコア + 軌跡なぞりスコアの max を毎フレーム通知 */
+  onScoreChange?: (score: number) => void;
+  /** 軌跡なぞりスコアを有効化するか（spec 2.2） */
+  trailScoring?: boolean;
   /** 先端おもりの CSS px 座標を毎フレーム通知（AIM HERE マーカー等で使用） */
   onTipPosition?: (pos: Vec2) => void;
 };
@@ -42,6 +57,10 @@ export default function PendulumCanvas({
   ambient = false,
   className = '',
   accent = ACCENT_COLOR,
+  showCursor = false,
+  feedbackStyle = 'ring',
+  onScoreChange,
+  trailScoring = false,
   onTipPosition,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -51,6 +70,7 @@ export default function PendulumCanvas({
     masses: number[];
   } | null>(null);
   const trailRef = useRef<TrailSample[]>([]);
+  const cursorRef = useRef({ x: -9999, y: -9999, inside: false });
   const rafRef = useRef(0);
 
   // おもり数が変わったときに状態を初期化
@@ -104,6 +124,21 @@ export default function PendulumCanvas({
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
 
+    // カーソル追跡：mousemove は window で拾い、canvas の bounding rect で相対化
+    const onMove = (e: MouseEvent) => {
+      const r = canvas.getBoundingClientRect();
+      cursorRef.current.x = e.clientX - r.left;
+      cursorRef.current.y = e.clientY - r.top;
+      cursorRef.current.inside = true;
+    };
+    const onLeave = () => {
+      cursorRef.current.inside = false;
+    };
+    if (showCursor && !ambient) {
+      window.addEventListener('mousemove', onMove);
+      canvas.addEventListener('mouseleave', onLeave);
+    }
+
     const draw = (now: number) => {
       let dt = Math.min((now - lastT) / 1000, 1 / 30);
       lastT = now;
@@ -127,6 +162,7 @@ export default function PendulumCanvas({
       const totalLen = st.lengths.reduce((a, b) => a + b, 0);
       const fieldRadius = Math.min(w, h) * FIELD_RADIUS_RATIO;
       const scale = fieldRadius / totalLen;
+      const totalLenPx = totalLen * scale; // = fieldRadius
 
       const bobs = bobPositions(st.s, st.lengths).map((p) => ({
         x: cx + p.x * scale,
@@ -153,6 +189,25 @@ export default function PendulumCanvas({
       const trail = trailRef.current;
 
       if (onTipPosition) onTipPosition({ x: tip.x / dpr, y: tip.y / dpr });
+
+      // ─── スコアリング ────────────────────────────────
+      const c = cursorRef.current;
+      const cursorActive = showCursor && !ambient && c.inside;
+      const cursorPx: Vec2 = { x: c.x * dpr, y: c.y * dpr };
+      const distToCenter = Math.hypot(cursorPx.x - cx, cursorPx.y - cy);
+      const inField = distToCenter <= fieldRadius;
+      let score = 0;
+      if (cursorActive && !paused) {
+        score = computeScore({
+          cursorPx,
+          tipPx: tip,
+          trail,
+          totalLenPx,
+          inField,
+          trailScoringEnabled: trailScoring,
+        });
+      }
+      if (onScoreChange) onScoreChange(score);
 
       // ─── Draw ────────────────────────────────────────
       ctx.clearRect(0, 0, w, h);
@@ -215,12 +270,11 @@ export default function PendulumCanvas({
         ctx.fill();
       }
 
-      // 先端おもり（accent ring + glow）
+      // 先端おもり（accent ring + score 連動 glow）
       const tipR = 8 * dpr;
       ctx.save();
       ctx.shadowColor = accent;
-      // glow 強度はスコア（M3 で導入）でモジュレートする想定。M2 では固定弱め
-      ctx.shadowBlur = 10 * dpr * 0.4;
+      ctx.shadowBlur = 10 * dpr * (0.4 + score * 0.6);
       ctx.fillStyle = '#fff';
       ctx.beginPath();
       ctx.arc(tip.x, tip.y, tipR, 0, Math.PI * 2);
@@ -228,11 +282,33 @@ export default function PendulumCanvas({
       ctx.shadowBlur = 0;
       ctx.strokeStyle = accent;
       ctx.lineWidth = 1.2 * dpr;
-      ctx.globalAlpha = 0.7;
+      ctx.globalAlpha = 0.7 + score * 0.3;
       ctx.beginPath();
       ctx.arc(tip.x, tip.y, tipR + 3 * dpr, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
+
+      // カーソルフィードバック（ring。spec 2.13 で本番は ring 固定）
+      if (cursorActive && feedbackStyle === 'ring') {
+        const sigmaPx = totalLenPx * SIGMA_FACTOR_TIP;
+        const baseR = sigmaPx * 1.2;
+        const ringR = baseR * (1 - score * 0.5);
+        ctx.save();
+        ctx.strokeStyle = score > 0.05 ? accent : 'rgba(255,255,255,0.35)';
+        ctx.shadowColor = accent;
+        ctx.shadowBlur = score * 18 * dpr;
+        ctx.globalAlpha = 0.4 + score * 0.5;
+        ctx.lineWidth = (1 + score * 1.5) * dpr;
+        ctx.beginPath();
+        ctx.arc(cursorPx.x, cursorPx.y, ringR, 0, Math.PI * 2);
+        ctx.stroke();
+        // 中心ティック
+        ctx.globalAlpha = 0.7;
+        ctx.beginPath();
+        ctx.arc(cursorPx.x, cursorPx.y, 2 * dpr, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
 
       rafRef.current = requestAnimationFrame(draw);
     };
@@ -242,8 +318,19 @@ export default function PendulumCanvas({
     return () => {
       cancelAnimationFrame(rafRef.current);
       ro.disconnect();
+      window.removeEventListener('mousemove', onMove);
+      canvas.removeEventListener('mouseleave', onLeave);
     };
-  }, [accent, ambient, paused, onTipPosition]);
+  }, [
+    accent,
+    ambient,
+    paused,
+    showCursor,
+    feedbackStyle,
+    onScoreChange,
+    trailScoring,
+    onTipPosition,
+  ]);
 
   return (
     <canvas
