@@ -5,6 +5,7 @@
 import { useMemo, useState } from 'react';
 import BackdropGrid from './components/BackdropGrid';
 import { PROFILES } from './constants';
+import { useHighScores } from './hooks/useHighScores';
 import { generateChaoticAngles } from './lib/chaos';
 import CustomScreen from './screens/CustomScreen';
 import DifficultyScreen from './screens/DifficultyScreen';
@@ -19,7 +20,6 @@ import type {
   DifficultyKey,
   GameMode,
   GameResult,
-  HighScores,
   RunConfig,
   ScreenName,
   Tier,
@@ -38,7 +38,7 @@ export default function App() {
   const [diffTier, setDiffTier] = useState<Tier>('normal');
   const [customCfg, setCustomCfg] = useState<CustomConfig>(INITIAL_CUSTOM);
   const [lastResult, setLastResult] = useState<GameResult | null>(null);
-  const [hs, setHS] = useState<HighScores>({}); // M9 で localStorage 化
+  const [hs, setHS] = useHighScores(); // localStorage と自動同期（M9）
   const [gameNonce, setGameNonce] = useState(0); // RETRY で乱数を再生成するためのキー
 
   const profileKey = `${diffBobs}-${diffTier}` as DifficultyKey;
@@ -74,7 +74,7 @@ export default function App() {
     if (runConfig && runConfig.profileKey) {
       const prev = hs[runConfig.profileKey];
       if (prev === undefined || rounded > prev) {
-        const next: HighScores = { ...hs, [runConfig.profileKey]: rounded };
+        const next = { ...hs, [runConfig.profileKey]: rounded };
         setHS(next);
         isNew = true;
       }
