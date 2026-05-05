@@ -20,13 +20,17 @@ export type DifficultyProfile = {
 // ─── モードと実行設定 ───────────────────────────────────────────────────
 export type GameMode = 'normal' | 'custom';
 
-/** カスタムモードのユーザー入力。bobs 以外の配列は最大3要素分保持し、slice して使う */
+/**
+ * カスタムモードのユーザー入力。
+ * 配列は length 3 のままにして、bobs=2 のときは先頭 2 要素のみ参照する慣習。
+ * （TS の tuple ではなく number[] にして編集中の copy/spread を素直に書けるようにする）
+ */
 export type CustomConfig = {
   bobs: BobCount;
-  /** 長さ。配列長は3。bobs=2 のときは先頭2要素のみ参照 */
-  lengths: [number, number, number];
-  /** 初期角度（rad、π=鉛直上向き）。配列長は3。bobs=2 のときは先頭2要素のみ参照 */
-  angles: [number, number, number];
+  /** ロッド長（length 3、bobs=2 のときは先頭 2 要素のみ参照） */
+  lengths: number[];
+  /** 初期角度（rad、π=鉛直上向き、length 3、bobs=2 のときは先頭 2 要素のみ参照） */
+  angles: number[];
 };
 
 /** 1ゲーム実行時に使う設定（ノーマル/カスタムを統一して扱う） */

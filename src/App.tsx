@@ -135,8 +135,9 @@ export default function App() {
 
       {screen === 'custom' && (
         <CustomScreen
+          cfg={customCfg}
+          onChange={setCustomCfg}
           onStart={() => {
-            setCustomCfg(INITIAL_CUSTOM);
             setGameNonce((n) => n + 1);
             setScreen('game');
           }}

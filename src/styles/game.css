@@ -912,6 +912,215 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
+ * カスタム画面（M8）
+ * ═══════════════════════════════════════════════════════════════════════ */
+.custom-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 40px;
+  align-items: stretch;
+  min-height: 0;
+  padding-top: 8px;
+}
+.custom-controls {
+  overflow-y: auto;
+  padding-right: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) var(--bg-0);
+  /* スクロールバー出現でレイアウトが縮まないよう常時スペース確保 */
+  scrollbar-gutter: stable;
+}
+.custom-controls::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-controls::-webkit-scrollbar-track {
+  background: var(--bg-0);
+}
+.custom-controls::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 3px;
+}
+.custom-controls::-webkit-scrollbar-thumb:hover {
+  background: var(--fg-low);
+}
+.custom-controls .screen-title {
+  text-align: left;
+  margin-bottom: 28px;
+}
+.custom-controls .kicker {
+  text-align: left;
+}
+.ctrl-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+}
+.ctrl-block:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+.ctrl-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--jp);
+  font-size: 14px;
+  font-weight: 500;
+}
+.ctrl-label.tight {
+  margin-top: 12px;
+}
+
+/* CustomSlider */
+.cslider {
+  position: relative;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+.cslider-track {
+  position: relative;
+  width: 100%;
+  height: 1px;
+  background: var(--line);
+}
+.cslider-tick {
+  position: absolute;
+  top: -3px;
+  width: 1px;
+  height: 7px;
+  background: var(--line-strong);
+  transform: translateX(-50%);
+}
+.cslider-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: var(--accent);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+.cslider-handle {
+  position: absolute;
+  width: 14px;
+  height: 22px;
+  transform: translate(-50%, -50%);
+  top: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.cslider-handle::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--bg-0);
+  border: 1px solid var(--accent);
+  border-radius: 1px;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.cslider-handle-line {
+  position: absolute;
+  width: 1px;
+  height: 10px;
+  background: var(--accent);
+  z-index: 1;
+}
+
+/* AngleDial */
+.angle-dial {
+  width: 110px;
+  height: 110px;
+  cursor: grab;
+  user-select: none;
+}
+.angle-dial:active {
+  cursor: grabbing;
+}
+.angle-dial svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* プレビュー */
+.custom-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: stretch;
+  min-height: 0;
+}
+.preview-frame {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.02), transparent 70%);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+}
+.preview-canvas {
+  position: absolute;
+  inset: 0;
+}
+.preview-meta-bar {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  letter-spacing: 0.1em;
+  pointer-events: none;
+}
+
+/* CTA 行 */
+.custom-cta-row {
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+  gap: 14px;
+  padding-top: 18px;
+}
+.preview-toggle-pill {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-1);
+  border: 1px solid var(--line-strong);
+  color: var(--fg-mid);
+  padding: 0 22px;
+  height: auto;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.15s;
+  letter-spacing: 0.1em;
+}
+.preview-toggle-pill:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+/* on 状態（STOP 表示）は常時赤くせず、:hover でのみ accent 化（基底ルールを継承） */
+.preview-toggle-pill svg {
+  width: 14px;
+  height: 14px;
+}
+.custom-cta-meta {
+  text-align: right;
+  padding-top: 8px;
+  letter-spacing: 0.15em;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
  * レスポンシブ
  * ═══════════════════════════════════════════════════════════════════════ */
 @media (max-width: 900px) {
@@ -941,6 +1150,9 @@ body {
   .result-layout {
     grid-template-columns: 1fr;
     padding-top: 0;
+  }
+  .custom-layout {
+    grid-template-columns: 1fr;
   }
   .screen.pad {
     padding: 20px;

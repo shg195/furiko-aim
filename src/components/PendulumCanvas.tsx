@@ -48,6 +48,10 @@ type Props = {
   trailScoring?: boolean;
   /** 先端おもりの CSS px 座標を毎フレーム通知（AIM HERE マーカー等で使用） */
   onTipPosition?: (pos: Vec2) => void;
+  /** カスタム画面のプレビュー振り子を直接ドラッグして長さ・角度を編集可能にする */
+  editable?: boolean;
+  /** editable=true 時、ドラッグでおもりを動かしたとき呼ばれる。idx は 0..n-1（ロッド/おもり index） */
+  onEditBob?: (idx: number, length: number, angleRad: number) => void;
 };
 
 export default function PendulumCanvas({
@@ -62,6 +66,8 @@ export default function PendulumCanvas({
   onScoreChange,
   trailScoring = false,
   onTipPosition,
+  editable = false,
+  onEditBob,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef<{
@@ -72,6 +78,8 @@ export default function PendulumCanvas({
   const trailRef = useRef<TrailSample[]>([]);
   const cursorRef = useRef({ x: -9999, y: -9999, inside: false });
   const rafRef = useRef(0);
+  /** editable モードでドラッグ中の bob index（0..n-1）。-1 で未ドラッグ */
+  const dragRef = useRef(-1);
 
   // おもり数が変わったときに状態を初期化
   useEffect(() => {
@@ -137,6 +145,67 @@ export default function PendulumCanvas({
     if (showCursor && !ambient) {
       window.addEventListener('mousemove', onMove);
       canvas.addEventListener('mouseleave', onLeave);
+    }
+
+    // editable モード：おもりドラッグで length + angle を変更
+    const computeRender = () => {
+      const st = stateRef.current;
+      if (!st) return null;
+      const w = canvas.width;
+      const h = canvas.height;
+      const totalLen = st.lengths.reduce((a, b) => a + b, 0);
+      const fieldRadius = Math.min(w, h) * FIELD_RADIUS_RATIO;
+      const scale = fieldRadius / totalLen;
+      const cx = w / 2;
+      const cy = h / 2;
+      const bobs = bobPositions(st.s, st.lengths).map((p) => ({
+        x: cx + p.x * scale,
+        y: cy + p.y * scale,
+      }));
+      return { bobs, scale };
+    };
+    const onEditMouseDown = (e: MouseEvent) => {
+      if (!editable || !onEditBob) return;
+      const data = computeRender();
+      if (!data) return;
+      const r = canvas.getBoundingClientRect();
+      const xPx = (e.clientX - r.left) * dpr;
+      const yPx = (e.clientY - r.top) * dpr;
+      let bestIdx = -1;
+      let bestDist = Infinity;
+      for (let i = 1; i < data.bobs.length; i++) {
+        const d = Math.hypot(data.bobs[i].x - xPx, data.bobs[i].y - yPx);
+        if (d < bestDist) {
+          bestDist = d;
+          bestIdx = i;
+        }
+      }
+      if (bestDist > 30 * dpr) return;
+      dragRef.current = bestIdx - 1;
+      e.preventDefault();
+    };
+    const onEditMouseMove = (e: MouseEvent) => {
+      if (!editable || !onEditBob || dragRef.current < 0) return;
+      const data = computeRender();
+      if (!data) return;
+      const idx = dragRef.current;
+      const parent = data.bobs[idx];
+      const r = canvas.getBoundingClientRect();
+      const xPx = (e.clientX - r.left) * dpr;
+      const yPx = (e.clientY - r.top) * dpr;
+      const dx = xPx - parent.x;
+      const dy = yPx - parent.y;
+      const newLength = Math.hypot(dx, dy) / data.scale;
+      const newAngle = Math.atan2(dx, dy);
+      onEditBob(idx, newLength, newAngle);
+    };
+    const onEditMouseUp = () => {
+      dragRef.current = -1;
+    };
+    if (editable) {
+      canvas.addEventListener('mousedown', onEditMouseDown);
+      window.addEventListener('mousemove', onEditMouseMove);
+      window.addEventListener('mouseup', onEditMouseUp);
     }
 
     const draw = (now: number) => {
@@ -320,6 +389,9 @@ export default function PendulumCanvas({
       ro.disconnect();
       window.removeEventListener('mousemove', onMove);
       canvas.removeEventListener('mouseleave', onLeave);
+      canvas.removeEventListener('mousedown', onEditMouseDown);
+      window.removeEventListener('mousemove', onEditMouseMove);
+      window.removeEventListener('mouseup', onEditMouseUp);
     };
   }, [
     accent,
@@ -330,6 +402,8 @@ export default function PendulumCanvas({
     onScoreChange,
     trailScoring,
     onTipPosition,
+    editable,
+    onEditBob,
   ]);
 
   return (
