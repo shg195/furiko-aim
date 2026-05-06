@@ -50,7 +50,7 @@ export const FIXED_TWEAKS: TweakSettings = {
 };
 
 // ─── localStorage キー ─────────────────────────────────────────────────
-export const HS_STORAGE_KEY = 'furiko-aim-highscores';
+export const HS_STORAGE_KEY = 'furiko-aim-highscores-v2';
 
 // ─── 難易度プロファイル ─────────────────────────────────────────────────
 export const PROFILES: Record<DifficultyKey, DifficultyProfile> = {

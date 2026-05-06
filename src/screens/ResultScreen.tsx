@@ -33,8 +33,7 @@ export default function ResultScreen({
     !isCustom && result.profileKey
       ? PROFILES[result.profileKey as DifficultyKey]
       : null;
-  const prevHS =
-    !isCustom && result.profileKey ? hs[result.profileKey] ?? 0 : 0;
+  const prevHS = result.profileKey ? hs[result.profileKey] ?? 0 : 0;
   const pctOfPerfect = (result.score / PERFECT_SCORE) * 100;
   const labelStr = isCustom
     ? 'CUSTOM'
@@ -87,35 +86,26 @@ export default function ResultScreen({
           <div className="kicker mono">FINAL SCORE</div>
           <div className="big-score mono">{result.score.toLocaleString()}</div>
           <div className="result-meta">
-            {isCustom ? (
-              <div className="result-meta-row">
-                <span className="muted">難易度</span>
-                <span className="mono">CUSTOM</span>
-              </div>
-            ) : (
-              <>
-                <div className="result-meta-row">
-                  <span className="muted">難易度</span>
-                  <span className="mono">{labelStr}</span>
-                </div>
-                <div className="result-meta-row">
-                  <span className="muted">ハイスコア</span>
-                  <span className="mono">
-                    {result.isNew ? (
-                      <span className="accent-text">
-                        {result.score.toLocaleString()}
-                      </span>
-                    ) : (
-                      prevHS.toLocaleString()
-                    )}
+            <div className="result-meta-row">
+              <span className="muted">難易度</span>
+              <span className="mono">{labelStr}</span>
+            </div>
+            <div className="result-meta-row">
+              <span className="muted">ハイスコア</span>
+              <span className="mono">
+                {result.isNew ? (
+                  <span className="accent-text">
+                    {result.score.toLocaleString()}
                   </span>
-                </div>
-                <div className="result-meta-row">
-                  <span className="muted">プレイ時間</span>
-                  <span className="mono">60.0s</span>
-                </div>
-              </>
-            )}
+                ) : (
+                  prevHS.toLocaleString()
+                )}
+              </span>
+            </div>
+            <div className="result-meta-row">
+              <span className="muted">プレイ時間</span>
+              <span className="mono">60.0s</span>
+            </div>
           </div>
           <div className="result-cta">
             <button className="btn btn-primary" onClick={onRetry}>
