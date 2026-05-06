@@ -1,5 +1,9 @@
 # 振り子エイム（Furiko-Aim）
 
+🎮 **遊ぶ：https://shg195.github.io/furiko-aim/**
+
+URL を開くだけで遊べます。インストール・ログイン・アカウント作成不要。ハイスコアは各自のブラウザに自動保存されます。
+
 カオス振り子（二重・三重振り子）の先端おもりをマウスカーソルで追跡し、追従精度をスコア化するブラウザエイムゲーム。
 
 - プラットフォーム：Web ブラウザ（PC、マウス操作前提）
@@ -126,10 +130,11 @@ RESUME / RETRY / DIFFICULTY（カスタム時は CUSTOM）/ HOME
 
 ## デプロイ
 
-GitHub Pages を想定（`vite.config.ts` で `base: '/furiko-aim/'` 設定済み）。
-リポジトリ名を変更する場合は `vite.config.ts` の `base` を該当リポジトリ名に合わせて修正してください。
+GitHub Pages で公開中：**https://shg195.github.io/furiko-aim/**
 
-公開先（予定）：`https://<user>.github.io/furiko-aim/`
+- `.github/workflows/deploy.yml` の GitHub Actions により、`main` ブランチへの push で自動的にビルド→デプロイ
+- `vite.config.ts` の `base: '/furiko-aim/'` でアセットパスをリポジトリ名に合わせている
+- リポジトリ名を変更する場合は `base` も合わせて変更
 
 ## ライセンス
 
