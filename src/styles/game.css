@@ -459,6 +459,9 @@ body {
   flex-direction: column;
   z-index: 1;
   animation: screenIn 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+  /* M11：モバイル幅で content が viewport を超えるときスクロール可能に。
+     ゲーム画面は別途 overflow: hidden で全画面固定（後出のルールが優先） */
+  overflow-y: auto;
 }
 .screen.pad {
   padding: 28px 40px;
@@ -1126,7 +1129,8 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
- * レスポンシブ
+ * レスポンシブ（M11）
+ * spec 8：タッチ操作対応は範囲外。PC 前提だがモバイル幅でも破綻しない。
  * ═══════════════════════════════════════════════════════════════════════ */
 @media (max-width: 900px) {
   .hud {
@@ -1149,20 +1153,138 @@ body {
   .mode-grid {
     grid-template-columns: 1fr;
   }
+  .mode-card {
+    min-height: 200px;
+    padding: 24px;
+  }
   .diff-grid {
     grid-template-columns: 1fr;
   }
   .result-layout {
     grid-template-columns: 1fr;
     padding-top: 0;
+    gap: 32px;
+  }
+  .result-side {
+    padding: 20px;
   }
   .custom-layout {
     grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .custom-controls {
+    max-height: 360px;
+  }
+  .preview-frame {
+    min-height: 320px;
   }
   .screen.pad {
     padding: 20px;
   }
   .time-bar {
     width: 160px;
+  }
+}
+
+@media (max-width: 600px) {
+  .result-cta {
+    flex-wrap: wrap;
+  }
+  .result-actions {
+    flex-wrap: wrap;
+  }
+  .pause-actions {
+    /* 4 ボタン縦積みは維持。pause-card 縮小に追従 */
+  }
+}
+
+@media (max-width: 480px) {
+  /* HUD：高密度化 */
+  .hud-time {
+    font-size: 24px;
+  }
+  .time-bar {
+    width: 120px;
+  }
+  .meter {
+    gap: 1px;
+    height: 12px;
+  }
+  .meter-cell {
+    width: 4px;
+  }
+  .hud-score {
+    font-size: 18px;
+  }
+  .ctrl-pill {
+    padding: 8px 12px;
+    gap: 6px;
+  }
+  /* ESC ラベルは画面が狭いときだけ隠す */
+  .ctrl-pill .kbd {
+    display: none;
+  }
+
+  /* タイトル：コンパクト化 */
+  .hero-title {
+    font-size: clamp(48px, 14vw, 80px);
+    margin-bottom: 20px;
+  }
+  .hero-sub {
+    font-size: 14px;
+    margin-bottom: 28px;
+  }
+
+  /* 一時停止オーバーレイ：縮小 */
+  .pause-card {
+    min-width: 0;
+    max-width: 92vw;
+    padding: 24px 20px;
+  }
+  .pause-stats {
+    gap: 24px;
+  }
+  .pause-stats .lg {
+    font-size: 22px;
+  }
+
+  /* 結果画面：FINAL SCORE 数値・PERFECT を縮小 */
+  .result-stat .lg {
+    font-size: 24px;
+  }
+  .result-pct {
+    font-size: 20px;
+  }
+
+  /* 難易度カード：メタ縮小 */
+  .diff-card {
+    padding: 12px;
+  }
+  .diff-card-foot .mono.xs {
+    font-size: 9px;
+  }
+  .diff-cta {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* カスタム画面：パネル詰め */
+  .custom-layout {
+    gap: 16px;
+  }
+  .custom-controls {
+    max-height: 320px;
+  }
+  .preview-frame {
+    min-height: 260px;
+  }
+  .ctrl-block {
+    padding: 12px 0;
+  }
+
+  /* タイトル画面のチェイン CTA */
+  .btn.lg {
+    padding: 14px 22px;
+    font-size: 12px;
   }
 }
